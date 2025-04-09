@@ -34,5 +34,3 @@ module.exports = {
 	activate,
 	deactivate
 }
-
-// test to push changes to repo
