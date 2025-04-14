@@ -1,33 +1,63 @@
 {
-  "name": "Simplify-Extension",
-  "displayName": "Simplify",
-  "description": "",
+  "name": "simplify-extension",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.99.0"
   },
-  "categories": [
-    "Other"
+  "activationEvents": [
+    "onView:simplifySidebar",
+    "onCommand:simplify.runTests"
   ],
-  "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "Simplify-Extension.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "simplify.runTests",
+        "title": "Run Unit Tests"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "simplifySidebar",
+          "title": "Unit Test AI",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "simplifySidebar": [
+        {
+          "id": "unitTestSidebar",
+          "name": "Tests"
+        }
+      ]
+    }
   },
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "mocha test.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.99.0",
-    "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.99.0",
+    "assert": "^2.0.0",
     "eslint": "^9.23.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
-  }
+    "jest": "^29.7.0",
+    "mocha": "^10.0.0"
+  },
+  "description": "This is the README for your extension \"Simplify-Extension\". After writing up a brief description, we recommend including the following sections.",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RayyanSarfraz/Simplify-Extension---Capstone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RayyanSarfraz/Simplify-Extension---Capstone/issues"
+  },
+  "homepage": "https://github.com/RayyanSarfraz/Simplify-Extension---Capstone#readme"
 }
