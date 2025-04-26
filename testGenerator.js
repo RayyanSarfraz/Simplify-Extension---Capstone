@@ -1,56 +1,56 @@
 const { spawn } = require('child_process');
 
+/**
+ * Extracts only the code between ```javascript ... ``` blocks.
+ */
+function extractCodeOnly(text) {
+  const blocks = [];
+  const re = /```(?:javascript)?\s*([\s\S]*?)```/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    blocks.push(m[1].trim());
+  }
+  return blocks.length ? blocks.join('\n\n') : text.trim();
+}
+
 async function generateTests(code) {
+  const fnNameMatch = code.match(/function\s+(\w+)/);
+  const fnName = fnNameMatch ? fnNameMatch[1] : 'function';
+  const prompt = `
+You are an expert software engineer.
+ONLY return raw Jest test code in JavaScript for the following function — no explanations, no comments, no markdown.
+Assume the function will be imported from './${fnName}.js'.
+
+Here is the code to test:
+${code}
+`;
+
   return new Promise((resolve, reject) => {
-    const prompt = `Write JavaScript unit tests for the following code:\n\n${code}`;
-    console.log("🧠 Sending to Ollama:\n", prompt);
+    // <-- Use the 6.7b variant here:
+    const proc = spawn('ollama', ['run', 'deepseek-coder:6.7b']);
+    let out = '', err = '';
 
-    const ollama = spawn('ollama', ['run', 'deepseek-coder']);
-
-    let output = '';
-    let errorOutput = '';
-
-    // Capture output from Ollama
-    ollama.stdout.on('data', (data) => {
-      const text = data.toString();
-      console.log("📥 Ollama stream:", text.trim());
-      output += text; // Append data to the output buffer
+    proc.stdout.on('data', chunk => {
+      const txt = chunk.toString();
+      console.log('📥 DeepSeek:', txt.trim());
+      out += txt;
+    });
+    proc.stderr.on('data', chunk => {
+      const txt = chunk.toString();
+      console.warn('⚠️ DeepSeek stderr:', txt.trim());
+      err += txt;
+    });
+    proc.on('error', e => reject(new Error("Ollama failed: " + e.message)));
+    proc.on('close', code => {
+      if (code !== 0) return reject(new Error(err || 'DeepSeek error'));
+      resolve(extractCodeOnly(out));
     });
 
-    // Capture stderr
-    ollama.stderr.on('data', (data) => {
-      const err = data.toString().replace(/\u001b\[\?2026l/g, '').trim();
-      console.warn("⚠️ Ollama stderr:", err);
-      errorOutput += err;
-    });
-
-    // Handle errors
-    ollama.on('error', (err) => {
-      console.error("🚨 Failed to start Ollama process:", err);
-      reject(new Error("Ollama process failed to start."));
-    });
-
-    // When Ollama finishes
-    ollama.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`🚨 Ollama exited with code ${code}`);
-        return reject(new Error(errorOutput || "Ollama failed to generate tests."));
-      }
-
-      const finalOutput = output.trim();
-      if (!finalOutput) {
-        return reject(new Error("No output received from Ollama."));
-      }
-
-      console.log("✅ Final Output:\n", finalOutput);
-      resolve(finalOutput);
-    });
-
-    // Wait for a short delay before writing to stdin
+    // Give Ollama the prompt
     setTimeout(() => {
-      ollama.stdin.write(prompt);
-      ollama.stdin.end(); // Signal end of input
-    }, 1000); // Adjust delay as needed
+      proc.stdin.write(prompt);
+      proc.stdin.end();
+    }, 200);
   });
 }
 

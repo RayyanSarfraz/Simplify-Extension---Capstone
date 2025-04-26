@@ -1,47 +1,72 @@
 const vscode = require('vscode');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const { generateTests } = require('./testGenerator');
 const { createOrShowPanel } = require('./panelProvider');
 
 function activate(context) {
-  console.log("✅ Extension activated");
-
   context.subscriptions.push(
     vscode.commands.registerCommand('simplify.runTests', async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
         vscode.window.showErrorMessage("No active editor found.");
-        console.log("❌ No active editor.");
         return;
       }
 
       const code = editor.document.getText();
-      console.log("📄 Code extracted:\n", code);
-
       if (!code.trim()) {
         vscode.window.showErrorMessage("The active file is empty.");
-        console.log("⚠️ The file is empty.");
         return;
       }
 
       vscode.window.showInformationMessage("🔧 Generating unit tests...");
-      console.log("🔄 Starting unit test generation...");
 
-      try {
-        const tests = await generateTests(code);
-        console.log("✅ Unit test generation complete");
-        createOrShowPanel(context.extensionUri, tests);
-        vscode.window.showInformationMessage("✅ Unit tests generated!");
-      } catch (err) {
-        vscode.window.showErrorMessage("❌ Test generation failed: " + err.message);
-        console.error("🚨 Error generating tests:", err);
+      // 1. Split into individual functions
+      const fnRegex = /function\s+(\w+)\s*\([^)]*\)\s*{[^]*?}/g;
+      let match;
+      const functions = [];
+      while ((match = fnRegex.exec(code))) {
+        functions.push({ name: match[1], code: match[0] });
       }
+      if (!functions.length) {
+        vscode.window.showErrorMessage("No functions found in file.");
+        return;
+      }
+
+      // 2. Generate tests per function
+      const testMap = {};
+      for (const fn of functions) {
+        try {
+          const tests = await generateTests(fn.code);
+          testMap[fn.name] = tests;
+        } catch (e) {
+          testMap[fn.name] = `// Error generating tests: ${e.message}`;
+        }
+      }
+
+      // 3. Show in panel
+      const panel = createOrShowPanel(context.extensionUri, testMap);
+
+      // 4. Handle Run button messages
+      panel.webview.onDidReceiveMessage(async message => {
+        if (message.command === 'runTest') {
+          const fnName = message.fn;
+          // **Stubbed** run: just echo back a placeholder
+          const result = `Ran tests for "${fnName}" (stubbed).`;
+          panel.webview.postMessage({
+            command: 'testResult',
+            fn: fnName,
+            result
+          });
+        }
+      });
+
+      vscode.window.showInformationMessage("✅ Unit tests generated!");
     })
   );
 }
 
 function deactivate() {}
 
-module.exports = {
-  activate,
-  deactivate,
-};
+module.exports = { activate, deactivate };
