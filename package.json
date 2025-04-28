@@ -1,33 +1,30 @@
 {
-  "name": "Simplify-Extension",
-  "displayName": "Simplify",
-  "description": "",
-  "version": "0.0.1",
+  "name": "simplify-extension",
+  "displayName": "Simplify Unit Test Generator",
+  "description": "Generates and runs Jest tests via deepseek-coder:6.7b for any workspace folder",
+  "version": "0.0.4",
+  "publisher": "your-publisher",
   "engines": {
     "vscode": "^1.99.0"
   },
-  "categories": [
-    "Other"
+  "activationEvents": [
+    "onCommand:simplify.runTests"
   ],
-  "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "Simplify-Extension.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "simplify.runTests",
+        "title": "Run Unit Tests"
+      }
+    ]
   },
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "jest --watchAll"
   },
   "devDependencies": {
+    "@types/node": "^20.x",
     "@types/vscode": "^1.99.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
-    "eslint": "^9.23.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "jest": "^29.7.0"
   }
 }
